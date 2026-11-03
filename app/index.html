@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OfflineTube</title>
+<style>
+:root{--bg:#f6f4f0;--panel:#ebe8e2;--ink:#1d1b19;--mute:#6d6862;--acc:#c2261f;--line:#d9d5ce}
+@media(prefers-color-scheme:dark){:root{--bg:#171615;--panel:#211f1d;--ink:#eeeae4;--mute:#9a948c;--acc:#ff5a4f;--line:#35322f}}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 "Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--ink);display:flex;min-height:100vh}
+nav{width:210px;background:var(--panel);padding:18px 12px;position:sticky;top:0;height:100vh;flex-shrink:0}
+.logo{font-weight:700;font-size:19px;padding:4px 12px 18px}.logo b{color:var(--acc)}
+nav a{display:block;padding:10px 12px;border-radius:8px;color:var(--ink);text-decoration:none;margin-bottom:2px}
+nav a:hover{background:var(--line)}nav a.on{background:var(--ink);color:var(--bg)}
+main{flex:1;padding:24px 28px;min-width:0}
+h1{margin:0 0 18px;font-size:22px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px 16px}
+.card{cursor:pointer}
+.thumb{aspect-ratio:16/9;background:var(--panel);border-radius:10px;overflow:hidden}
+.thumb img,.thumb video{width:100%;height:100%;object-fit:cover;display:block}
+.card h3{margin:8px 0 2px;font-size:14px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card small{color:var(--mute)}
+.pl .thumb{box-shadow:6px -6px 0 -2px var(--line)}
+.player video{width:100%;max-height:72vh;background:#000;border-radius:10px;display:block}
+#chp{margin-top:12px}
+.chnow{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+.chnow b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chbar{display:flex;gap:3px;height:16px;align-items:center}
+.seg{position:relative;height:100%;display:flex;align-items:center;cursor:pointer;min-width:2px}
+.sb{width:100%;height:5px;background:var(--line);border-radius:3px;overflow:hidden;transition:height .1s}
+.seg:hover .sb{height:10px}
+.sb i{display:block;height:100%;width:0;background:var(--acc)}
+.seg:hover::after{content:attr(data-t);position:absolute;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:4px 8px;border-radius:6px;font-size:12px;white-space:nowrap;z-index:5;pointer-events:none}
+.chlist{max-height:240px;overflow:auto;margin-top:10px;border-radius:10px;background:var(--panel)}
+.chi{display:flex;gap:12px;padding:8px 12px;cursor:pointer}.chi:hover,.chi.cur{background:var(--line)}
+.chi span{color:var(--acc);min-width:56px;font-variant-numeric:tabular-nums}
+.watch{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:24px;align-items:start}
+.qpanel{background:var(--panel);border-radius:12px;display:flex;flex-direction:column;max-height:calc(100vh - 48px);position:sticky;top:24px;overflow:hidden}
+.qh{padding:14px 16px 12px;border-bottom:1px solid var(--line)}
+.qh h2{margin:0 0 2px;font-size:17px;line-height:1.3}.qh small{color:var(--mute)}
+.qb{display:flex;gap:8px;margin-top:10px}
+.ic{width:40px;height:34px;padding:0;display:grid;place-items:center}
+.ic svg{width:20px;height:20px;fill:currentColor}
+.ic.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.ql{overflow:auto;position:relative;flex:1}
+.qi{display:flex;gap:10px;align-items:center;padding:8px 12px 8px 4px;cursor:pointer}
+.qi:hover{background:var(--line)}.qi.cur{background:var(--line);box-shadow:inset 3px 0 var(--acc)}
+.qi .n{width:24px;text-align:center;color:var(--mute);font-size:12px;flex-shrink:0}
+.qt{width:112px;aspect-ratio:16/9;background:var(--bg);border-radius:6px;overflow:hidden;flex-shrink:0}
+.qt img{width:100%;height:100%;object-fit:cover;display:block}
+.qm{min-width:0}.qm b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13px;font-weight:600}
+.qm small{color:var(--mute);font-size:12px}
+@media(max-width:1000px){.watch{grid-template-columns:1fr}.qpanel{position:static;max-height:460px}}
+.bar{display:flex;gap:12px;align-items:center;margin:12px 0}
+button{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 14px;border-radius:20px;cursor:pointer}
+button.liked{background:var(--acc);border-color:var(--acc);color:#fff}
+.head{display:flex;align-items:center;gap:16px;margin-bottom:18px}.head h1{margin:0}
+.dl{background:var(--panel);border-radius:12px;padding:16px;margin-bottom:24px;max-width:760px}
+.dl .row{display:flex;gap:10px;margin-bottom:10px}
+.dl input[type=text]{flex:1;font:inherit;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.dl label{display:block;color:var(--mute);margin-bottom:10px}
+.dl .state{margin:8px 0 6px;font-weight:600}.dl .err{color:var(--acc)}
+.prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden}.prog i{display:block;height:100%;background:var(--acc)}
+.log{max-height:170px;overflow:auto;font:12px/1.4 Consolas,monospace;color:var(--mute);white-space:pre-wrap;margin:10px 0 0}
+.empty{color:var(--mute);padding:40px 0;max-width:46ch}
+a.back{color:var(--mute);text-decoration:none}
+@media(max-width:700px){nav{width:64px}nav a{font-size:0}.logo{font-size:0}}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+</style></head><body>
+<nav>
+  <div class="logo">Offline<b>Tube</b></div>
+  <a href="#/home" data-r="home">Главная</a>
+  <a href="#/shorts" data-r="shorts">Shorts</a>
+  <a href="#/playlists" data-r="playlists">Плейлисты</a>
+  <a href="#/liked" data-r="liked">Понравившиеся</a>
+</nav>
+<main id="view"></main>
+<script>
+function pref(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){}}
+let queue={pl:'',order:[]}, shuffleOn=pref('ot_shuffle')==='1', repeatOn=pref('ot_repeat')==='1';
+let lib={playlists:[]}, likes=[], dlTimer=null, dlOpen=false, dlSt={status:'idle',lines:[]}, seenSeq=0, dlUrl='', dlThumbs=false, dlErr='';
+const $=s=>document.querySelector(s), view=$('#view');
+const all=()=>lib.playlists.flatMap(p=>p.videos);
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const go=(kind,x)=>{location.hash='#/'+kind+'/'+encodeURIComponent(x)};
+
+async function init(){
+  try{
+    lib=await (await fetch('/api/library')).json();
+    likes=await (await fetch('/api/likes')).json();
+    try{seenSeq=(await (await fetch('/api/download/status')).json()).seq}catch(e){}
+  }catch(e){view.innerHTML='<p class="empty">Нет связи с запускалкой. Откройте приложение через «Запустить.bat».</p>';return}
+  route();
+}
+const saveLikes=()=>fetch('/api/likes',{method:'POST',body:JSON.stringify(likes)});
+
+function card(v){
+  return `<div class="card" data-watch="${esc(v.id)}">
+    <div class="thumb"><img loading="lazy" src="${v.thumb}" alt="" onerror="this.remove()"></div>
+    <h3>${esc(v.title)}</h3><small>${esc(v.playlist)}</small></div>`;
+}
+const grid=(vs,msg)=>vs.length?`<div class="grid">${vs.map(card).join('')}</div>`:`<p class="empty">${msg}</p>`;
+
+const pages={
+  // TODO: что показывать на главной (недавние, случайные, продолжить просмотр)
+  home:()=>`<h1>Главная</h1>`+grid(all(),'Видео пока нет. Положите папки плейлистов в папку videos.'),
+  shorts:()=>`<h1>Shorts</h1><p class="empty">Раздел в разработке. Здесь будут вертикальные ролики.</p>`,
+  playlists:()=>`<div class="head"><h1>Плейлисты</h1><button id="add">+ Добавить плейлист</button></div><div id="dl"></div>`+(lib.playlists.length?`<div class="grid">${lib.playlists.map(p=>
+    `<div class="card pl" data-playlist="${esc(p.name)}">
+     <div class="thumb">${p.videos[0]?`<img loading="lazy" src="${p.videos[0].thumb}" alt="" onerror="this.remove()">`:''}</div>
+     <h3>${esc(p.name)}</h3><small>${p.videos.length} видео</small></div>`).join('')}</div>`
+     :`<p class="empty">Плейлистов пока нет. Нажмите «Добавить плейлист» и вставьте ссылку.</p>`),
+  liked:()=>`<h1>Понравившиеся</h1>`+grid(all().filter(v=>likes.includes(v.id)),'Нажмите «Нравится» под видео, и оно появится здесь.'),
+};
+
+function playlist(name){
+  const p=lib.playlists.find(p=>p.name===name); if(!p) return pages.playlists();
+  return `<a class="back" href="#/playlists">← Плейлисты</a><h1>${esc(p.name)}</h1>`+grid(p.videos,'Пусто.');
+}
+const IC_REPEAT='<svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>';
+const IC_SHUFFLE='<svg viewBox="0 0 24 24"><path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>';
+const plList=name=>(lib.playlists.find(p=>p.name===name)||{videos:[]}).videos;
+function shuffled(ids,first){
+  const r=ids.filter(x=>x!==first);
+  for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]]}
+  return first?[first,...r]:r;
+}
+function buildQueue(v){
+  const ids=plList(v.playlist).map(x=>x.id);
+  queue={pl:v.playlist,order:shuffleOn?shuffled(ids,v.id):ids};
+}
+function nextId(id,dir){
+  const o=queue.order,j=o.indexOf(id)+dir;
+  if(j>=0&&j<o.length) return o[j];
+  return repeatOn?o[(j+o.length)%o.length]:null;
+}
+function panel(id){
+  const byId=Object.fromEntries(plList(queue.pl).map(x=>[x.id,x]));
+  const pos=queue.order.indexOf(id);
+  const items=queue.order.map((vid,i)=>{const x=byId[vid];
+    return `<div class="qi${vid===id?' cur':''}" data-watch="${esc(vid)}"><span class="n">${vid===id?'▶':i+1}</span>
+      <div class="qt"><img loading="lazy" src="${x.thumb}" alt="" onerror="this.remove()"></div>
+      <div class="qm"><b>${esc(x.title)}</b><small>${esc(x.playlist)}</small></div></div>`}).join('');
+  return `<div class="qh"><h2>${esc(queue.pl)}</h2><small>${pos+1} из ${queue.order.length}</small>
+    <div class="qb">
+      <button id="rp" class="ic${repeatOn?' on':''}" title="Повторять плейлист" aria-pressed="${repeatOn}">${IC_REPEAT}</button>
+      <button id="sh" class="ic${shuffleOn?' on':''}" title="Перемешать" aria-pressed="${shuffleOn}">${IC_SHUFFLE}</button>
+    </div></div><div class="ql" id="ql">${items}</div>`;
+}
+function watch(id){
+  const v=all().find(v=>v.id===id); if(!v) return pages.home();
+  if(queue.pl!==v.playlist||queue.order.length!==plList(v.playlist).length||!queue.order.includes(id)) buildQueue(v);
+  return `<div class="watch"><div class="player">
+    <video id="pv" src="${v.url}" controls autoplay preload="auto"></video>
+    <p id="err" class="empty" hidden></p>
+    <div id="chp" hidden></div>
+    <h1 style="margin-top:14px">${esc(v.title)}</h1>
+    <div class="bar"><button id="lk" class="${likes.includes(id)?'liked':''}">Нравится</button>
+      <button id="pr">← Предыдущее</button><button id="nx">Следующее →</button>
+      <small>${esc(v.playlist)}</small></div></div>
+    <aside class="qpanel" id="qp">${panel(id)}</aside></div>`;
+}
+function bindPanel(id){
+  const v=all().find(v=>v.id===id);
+  const ql=$('#ql'), cur=ql.querySelector('.cur'); if(cur) ql.scrollTop=cur.offsetTop-8;
+  const refresh=()=>{$('#qp').innerHTML=panel(id);bindPanel(id)};   // видео не перезапускается
+  $('#rp').onclick=()=>{repeatOn=!repeatOn;pref('ot_repeat',repeatOn?'1':'0');refresh()};
+  $('#sh').onclick=()=>{shuffleOn=!shuffleOn;pref('ot_shuffle',shuffleOn?'1':'0');
+    const ids=plList(v.playlist).map(x=>x.id);
+    queue.order=shuffleOn?shuffled(ids,id):ids;refresh()};
+}
+const fmt=t=>{t=Math.floor(t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;
+  return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(s).padStart(2,'0')};
+async function drawChapters(id,pv){
+  let ch=[];
+  try{ch=(await (await fetch('/api/chapters?id='+encodeURIComponent(id))).json()).chapters||[]}catch(e){}
+  const box=$('#chp'); if(!ch.length||!box||!document.body.contains(pv)) return;
+  box.hidden=false;
+  box.innerHTML=`<div class="chnow"><b id="chname"></b><button id="chtog">Эпизоды (${ch.length})</button></div>
+    <div class="chbar">${ch.map((c,i)=>`<div class="seg" data-i="${i}" data-t="${fmt(c.start)} ${esc(c.title)}" style="flex:${c.end-c.start}"><div class="sb"><i></i></div></div>`).join('')}</div>
+    <div class="chlist" hidden>${ch.map((c,i)=>`<div class="chi" data-i="${i}"><span>${fmt(c.start)}</span><b>${esc(c.title)}</b></div>`).join('')}</div>`;
+  const segs=[...box.querySelectorAll('.seg')], rows=[...box.querySelectorAll('.chi')], list=box.querySelector('.chlist');
+  $('#chtog').onclick=()=>{list.hidden=!list.hidden};
+  segs.forEach((sg,i)=>sg.onclick=e=>{const r=sg.getBoundingClientRect(),c=ch[i];
+    pv.currentTime=c.start+Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))*(c.end-c.start);pv.play()});
+  rows.forEach((rw,i)=>rw.onclick=()=>{pv.currentTime=ch[i].start;pv.play()});
+  const upd=()=>{if(!document.body.contains(pv)||!$('#chname'))return;const t=pv.currentTime;let cur=0;
+    ch.forEach((c,i)=>{if(t>=c.start)cur=i;
+      segs[i].firstChild.firstChild.style.width=Math.min(100,Math.max(0,(t-c.start)/(c.end-c.start)*100))+'%'});
+    $('#chname').textContent=ch[cur].title;
+    rows.forEach((r,i)=>r.classList.toggle('cur',i===cur))};
+  pv.addEventListener('timeupdate',upd);pv.addEventListener('seeked',upd);upd();
+}
+function bindWatch(id){
+  const v=all().find(v=>v.id===id); if(!v) return;
+  const pv=$('#pv');
+  pv.onerror=()=>{const e=$('#err');e.hidden=false;
+    e.textContent='Браузер не смог воспроизвести этот файл (код '+(pv.error?.code||'?')+'). Чаще всего причина в кодеке (AV1/VP9). Перекачайте видео в H.264 или конвертируйте через ffmpeg: см. README.'};
+  $('#lk').onclick=e=>{likes=likes.includes(id)?likes.filter(x=>x!==id):[...likes,id];
+    e.target.classList.toggle('liked');saveLikes()};
+  const step=dir=>{const n=nextId(id,dir); if(!n) return;
+    if(n===id){pv.currentTime=0;pv.play()} else go('watch',n)};
+  $('#nx').onclick=()=>step(1);
+  $('#pr').onclick=()=>step(-1);
+  pv.onended=()=>step(1);
+  bindPanel(id);
+  drawChapters(id,pv);
+}
+const dlPost=(path,body)=>fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-OfflineTube':'1'},body:JSON.stringify(body||{})}).then(r=>r.json());
+function drawDl(){
+  const box=$('#dl'); if(!box) return;
+  const s=dlSt, run=s.status==='running';
+  if(!dlOpen && !run){box.innerHTML='';return}
+  const names={running:'Скачивание…',done:'Готово',error:'Завершено с ошибками: часть видео могла не скачаться',cancelled:'Остановлено'};
+  box.innerHTML=`<div class="dl">
+    <div class="row"><input type="text" id="dlurl" placeholder="Ссылка на плейлист YouTube (с list=…)" value="${esc(run?s.url:dlUrl)}" ${run?'disabled':''}>
+    ${run?'<button id="dlstop">Остановить</button>':'<button id="dlgo">Скачать</button>'}</div>
+    <label><input type="checkbox" id="dlthumbs" ${(run?s.thumbs_only:dlThumbs)?'checked':''} ${run?'disabled':''}> Только обложки и эпизоды (видео уже скачаны)</label>
+    ${dlErr?`<div class="state err">${esc(dlErr)}</div>`:''}
+    ${s.status!=='idle'?`<div class="state">${names[s.status]||''} ${esc(s.item||'')}</div>
+    <div class="prog"><i style="width:${s.percent||0}%"></i></div>
+    <pre class="log">${esc((s.lines||[]).slice(-12).join('\n'))}</pre>`:''}</div>`;
+  const u=$('#dlurl'); if(u&&!run) u.oninput=e=>dlUrl=e.target.value;
+  const t=$('#dlthumbs'); if(t&&!run) t.onchange=e=>dlThumbs=e.target.checked;
+  const go=$('#dlgo'); if(go) go.onclick=async()=>{
+    dlErr=''; const r=await dlPost('/api/download',{url:dlUrl.trim(),thumbs_only:dlThumbs});
+    if(!r.ok) dlErr=r.error||'Не удалось начать.'; dlOpen=true; pollDl();};
+  const st=$('#dlstop'); if(st) st.onclick=async()=>{await dlPost('/api/download/cancel'); pollDl()};
+}
+async function pollDl(){
+  clearTimeout(dlTimer);
+  try{dlSt=await (await fetch('/api/download/status')).json()}catch(e){return}
+  if(!$('#dl')) return;                       // ушли со страницы
+  if(dlSt.status!=='running' && dlSt.seq!==seenSeq){
+    seenSeq=dlSt.seq; lib=await (await fetch('/api/library')).json(); route(); return;
+  }
+  drawDl();
+  if(dlSt.status==='running') dlTimer=setTimeout(pollDl,1500);
+}
+function bindDl(){
+  $('#add').onclick=()=>{dlOpen=!dlOpen;drawDl();if(dlOpen)$('#dlurl')?.focus()};
+  pollDl();
+}
+function route(){
+  clearTimeout(dlTimer);
+  const m=(location.hash||'#/home').match(/#\/([^/]*)\/?(.*)/)||[,'home',''];
+  const r=m[1], a=m[2]?decodeURIComponent(m[2]):'';
+  const active=r==='playlist'?'playlists':r==='watch'?'home':r;
+  document.querySelectorAll('nav a').forEach(x=>x.classList.toggle('on',x.dataset.r===active));
+  view.innerHTML = r==='watch'?watch(a): r==='playlist'?playlist(a): (pages[r]||pages.home)();
+  if(r==='watch') bindWatch(a);
+  if(r==='playlists') bindDl();
+  scrollTo(0,0);
+}
+view.addEventListener('click',e=>{
+  const c=e.target.closest('.card,.qi'); if(!c) return;
+  if(c.dataset.watch) go('watch',c.dataset.watch);
+  else if(c.dataset.playlist) go('playlist',c.dataset.playlist);
+});
+addEventListener('hashchange',route); init();
+</script></body></html>
