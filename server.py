@@ -8,7 +8,11 @@ for _st in (sys.stdout, sys.stderr):
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 VIDEOS = os.path.join(ROOT, "videos")      # сюда кладём папки-плейлисты
+SHORTS = os.path.join(ROOT, "shorts")      # сюда скачиваются Shorts
+SHORTS_ARCHIVE = os.path.join(ROOT, "data", "shorts_archive.txt")   # что уже скачано, чтобы не качать повторно
+SHORTS_LIMIT = 2
 LIKES = os.path.join(ROOT, "data", "likes.json")
+COLLECTIONS = os.path.join(ROOT, "data", "collections.json")        # «мои плейлисты» (Смотреть позже и т.д.)
 EXT = {".mp4", ".mkv", ".webm", ".mov"}
 PORT = 8765
 THUMBS = os.path.join(ROOT, "data", "thumbs")
@@ -18,6 +22,7 @@ FFMPEG = shutil.which("ffmpeg") or next((p for p in (
 SIDE = (".jpg", ".jpeg", ".png", ".webp")   # обложки, скачанные yt-dlp рядом с видео
 MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
 COOKIES_BROWSER = "firefox"   # браузер, из которого yt-dlp берёт cookies; None - не использовать
+FIREFOX_CACHE = None          # путь к cache2 (или cache2\entries) вручную, если авто-поиск не нашёл кэш
 YT_HOSTS = ("youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be")
 
 def safe_parts(parts):
@@ -108,15 +113,154 @@ def scan():
                 if ext.lower() not in EXT: continue
                 if re.search(r"\.f\d+(-\w+)?$", name): continue   # недокачанный поток yt-dlp
                 title = re.sub(r"^\d+\s*-\s*", "", name)
-                items.append({"id": f"{pl}/{f}", "title": title,
-                              "playlist": pl, "url": "/videos/" + quote(pl) + "/" + quote(f),
-                              "thumb": "/thumb?id=" + quote(pl + "/" + f)
-                              + ("&s=1" if sidecar(os.path.join(d, f)) else "")})
+
+                # Читаем информацию, сохранённую yt-dlp
+                info_path = os.path.join(d, name + ".info.json")
+                try:
+                    with open(info_path, encoding="utf-8") as file:
+                        info = json.load(file)
+                except Exception:
+                    info = {}
+
+                video = {
+                    "id": f"{pl}/{f}",
+                    "title": title,
+                    "playlist": pl,
+                    "url": "/videos/" + quote(pl) + "/" + quote(f),
+                    "thumb": "/thumb?id=" + quote(pl + "/" + f)
+                             + ("&s=1" if sidecar(os.path.join(d, f)) else ""),
+
+                    # Информация с YouTube
+                    "description": info.get("description") or "",
+                    "views": info.get("view_count"),
+                    "youtube_likes": info.get("like_count"),
+                    "uploader": info.get("uploader") or "",
+                    "upload_date": info.get("upload_date") or "",
+                    "duration": info.get("duration")
+                }
+                items.append(video)
             playlists.append({"name": pl, "videos": items})
     return {"playlists": playlists}
 
+def scan_shorts():
+    """shorts/<id>.mp4 (+ .jpg, .info.json) -> список для раздела Shorts, новые сверху"""
+    if not os.path.isdir(SHORTS): return []
+    files = []
+    for f in os.listdir(SHORTS):
+        name, ext = os.path.splitext(f)
+        if ext.lower() in EXT and not re.search(r"\.f\d+(-\w+)?$", name):
+            files.append(f)
+    files.sort(key=lambda f: os.path.getmtime(os.path.join(SHORTS, f)), reverse=True)
+    out = []
+    for f in files:
+        name = os.path.splitext(f)[0]
+        try:
+            with open(os.path.join(SHORTS, name + ".info.json"), encoding="utf-8") as fh:
+                info = json.load(fh)
+        except Exception:
+            info = {}
+        poster = ""
+        for e in SIDE:
+            if os.path.isfile(os.path.join(SHORTS, name + e)):
+                poster = "/shortsfiles/" + quote(name + e); break
+        out.append({
+            "id": "shorts/" + f,
+            "title": info.get("title") or name,
+            "uploader": info.get("uploader") or "",
+            "views": info.get("view_count"),
+            "youtube_likes": info.get("like_count"),
+            "url": "/shortsfiles/" + quote(f),
+            "poster": poster,
+        })
+    return out
 
-JOB = {"status": "idle", "url": "", "thumbs_only": False, "percent": 0.0, "item": "",
+
+# ───────────── поиск Shorts в кэше Firefox ─────────────
+# Firefox хранит кэш в cache2/entries: один файл на ответ сервера, в конце файла - метаданные
+# с адресом (ключом). Страницы с рекомендациями грузят превью роликов, поэтому по адресам
+# превью и ссылкам /shorts/<id> можно понять, какие Shorts вам показывали.
+KEY_RE = re.compile(rb":(https?://[^\x00]{8,2000})\x00")
+SHORT_KEY = re.compile(
+    rb"youtube\.com/shorts/([\w-]{11})(?![\w-])"
+    rb"|ytimg\.com/vi(?:_webp)?/([\w-]{11})/(?:oar\w*|frame0)\.(?:jpg|webp)")   # вертикальные превью Shorts
+
+def firefox_cache_dirs():
+    if FIREFOX_CACHE:
+        p = FIREFOX_CACHE
+        for cand in (p, os.path.join(p, "entries"), os.path.join(p, "cache2", "entries")):
+            if os.path.isdir(cand) and os.path.basename(cand) == "entries": return [cand]
+        return []
+    home = os.path.expanduser("~")
+    bases = []
+    if os.name == "nt":
+        for env in ("LOCALAPPDATA", "APPDATA"):
+            b = os.environ.get(env)
+            if b: bases.append(os.path.join(b, "Mozilla", "Firefox", "Profiles"))
+    elif sys.platform == "darwin":
+        bases.append(os.path.join(home, "Library", "Caches", "Firefox", "Profiles"))
+    else:
+        bases += [os.path.join(home, ".cache", "mozilla", "firefox"),
+                  os.path.join(home, "snap", "firefox", "common", ".cache", "mozilla", "firefox")]
+    dirs = []
+    for b in bases:
+        if not os.path.isdir(b): continue
+        for prof in os.listdir(b):
+            d = os.path.join(b, prof, "cache2", "entries")
+            if os.path.isdir(d): dirs.append(d)
+    return dirs
+
+def cache_keys(path):
+    """Адреса (ключи) из метаданных одного файла кэша"""
+    try:
+        size = os.path.getsize(path)
+        with open(path, "rb") as f:
+            if size > 8:
+                f.seek(size - 4)
+                off = int.from_bytes(f.read(4), "big")      # последние 4 байта - смещение метаданных
+            else:
+                off = size
+            if not (0 < off < size): off = max(0, size - 16384)
+            f.seek(off); meta = f.read()
+    except OSError:
+        return []
+    return [m.group(1) for m in KEY_RE.finditer(meta)]
+
+def archived_ids():
+    try:
+        with open(SHORTS_ARCHIVE, encoding="utf-8") as f:
+            return {ln.split()[-1] for ln in f if ln.strip()}
+    except OSError:
+        return set()
+
+def firefox_short_ids(limit, log):
+    dirs = firefox_cache_dirs()
+    if not dirs:
+        log("Кэш Firefox не найден. Укажите путь в переменной FIREFOX_CACHE в server.py.")
+        return []
+    entries = []
+    for d in dirs:
+        try:
+            with os.scandir(d) as it:
+                for e in it:
+                    try:
+                        if e.is_file(): entries.append((e.stat().st_mtime, e.path))
+                    except OSError: pass
+        except OSError: pass
+    entries.sort(reverse=True)                     # сначала самое свежее
+    log("Профилей с кэшем: %d, файлов в кэше: %d" % (len(dirs), len(entries)))
+    seen = archived_ids(); skipped = len(seen & set())
+    found = []
+    for _, path in entries:
+        for key in cache_keys(path):
+            for m in SHORT_KEY.finditer(key):
+                vid = (m.group(1) or m.group(2)).decode("ascii", "ignore")
+                if vid in seen: continue
+                seen.add(vid); found.append(vid)
+        if len(found) >= limit: break
+    return found[:limit]
+
+
+JOB = {"status": "idle", "kind": "playlist", "url": "", "thumbs_only": False, "percent": 0.0, "item": "",
        "lines": collections.deque(maxlen=60), "seq": 0, "code": None}
 JOB_LOCK = threading.Lock()
 PROC = None
@@ -125,10 +269,14 @@ def valid_url(u):
     p = urlparse(u.strip())
     return p.scheme in ("http", "https") and (p.hostname or "") in YT_HOSTS and "list=" in (p.query or "")
 
-def ytdlp_cmd(url, thumbs_only):
+def ytdlp_base():
     cmd = [sys.executable, "-m", "yt_dlp", "--remote-components", "ejs:github"]
     if COOKIES_BROWSER: cmd += ["--cookies-from-browser", COOKIES_BROWSER]
     if FFMPEG and not shutil.which("ffmpeg"): cmd += ["--ffmpeg-location", FFMPEG]
+    return cmd
+
+def ytdlp_cmd(url, thumbs_only):
+    cmd = ytdlp_base()
     cmd += ["--yes-playlist", "-c", "--retries", "20", "--fragment-retries", "20",
             "--concurrent-fragments", "1", "--newline",
             "-P", VIDEOS, "-o", "%(playlist_title)s/%(playlist_index)03d - %(title)s.%(ext)s",
@@ -138,17 +286,32 @@ def ytdlp_cmd(url, thumbs_only):
     if thumbs_only: cmd.append("--skip-download")
     return cmd + [url.strip()]
 
+def shorts_cmd(ids):
+    cmd = ytdlp_base()
+    cmd += ["--no-playlist", "-c", "--retries", "20", "--fragment-retries", "20",
+            "--concurrent-fragments", "1", "--newline",
+            "-P", SHORTS, "-o", "%(id)s.%(ext)s",
+            "-f", "bv*[vcodec^=avc1]+ba[acodec^=mp4a]/b[ext=mp4]/bv*+ba/b", "--merge-output-format", "mp4",
+            "--match-filters", "duration<=190",      # отсеивает обычные длинные видео, попавшие в список
+            "--write-thumbnail", "--convert-thumbnails", "jpg", "--write-info-json",
+            "--download-archive", SHORTS_ARCHIVE]
+    return cmd + ["https://www.youtube.com/shorts/" + i for i in ids]
+
 def job_snapshot():
     with JOB_LOCK:
         d = dict(JOB); d["lines"] = list(JOB["lines"]); return d
 
-def _run_job(url, thumbs_only):
+def job_log(text):
+    with JOB_LOCK: JOB["lines"].append(text)
+
+def _execute(cmd, total=0):
+    """Запуск yt-dlp и разбор его вывода в JOB (общий для плейлистов и Shorts)"""
     global PROC
     env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8", PYTHONUNBUFFERED="1")
     flags = 0x08000000 if os.name == "nt" else 0
-    code = None
+    code = None; seen = 0
     try:
-        PROC = subprocess.Popen(ytdlp_cmd(url, thumbs_only), stdout=subprocess.PIPE,
+        PROC = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                                 env=env, creationflags=flags)
         for raw in PROC.stdout:
@@ -156,13 +319,16 @@ def _run_job(url, thumbs_only):
             if not line: continue
             m = re.search(r"Downloading item (\d+) of (\d+)", line)
             pm = re.search(r"\[download\]\s+([\d.]+)%", line)
+            ex = total and re.search(r"\[youtube\] Extracting URL", line)
             with JOB_LOCK:
                 if m: JOB["item"] = "Видео %s из %s" % m.groups(); JOB["percent"] = 0.0
+                if ex:
+                    seen += 1; JOB["item"] = "Ролик %d из %d" % (min(seen, total), total); JOB["percent"] = 0.0
                 if pm: JOB["percent"] = float(pm.group(1))
                 else: JOB["lines"].append(line[-300:])
         code = PROC.wait()
     except Exception as e:
-        with JOB_LOCK: JOB["lines"].append("Не удалось запустить yt-dlp: %r" % e)
+        job_log("Не удалось запустить yt-dlp: %r" % e)
     with JOB_LOCK:
         if JOB["status"] != "cancelled":
             JOB["status"] = "done" if code == 0 else "error"
@@ -170,15 +336,43 @@ def _run_job(url, thumbs_only):
         if JOB["status"] == "done": JOB["percent"] = 100.0
     PROC = None
 
+def _run_job(url, thumbs_only):
+    _execute(ytdlp_cmd(url, thumbs_only))
+
+def _run_shorts_job():
+    try:
+        ids = firefox_short_ids(SHORTS_LIMIT, job_log)
+    except Exception as e:
+        ids = []; job_log("Ошибка при чтении кэша: %r" % e)
+    if not ids:
+        job_log("Новых Shorts в кэше не найдено. Пролистайте Shorts/рекомендации в Firefox и повторите.")
+        with JOB_LOCK:
+            JOB["status"] = "error"; JOB["seq"] += 1
+        return
+    job_log("Найдено новых Shorts: %d" % len(ids))
+    os.makedirs(SHORTS, exist_ok=True)
+    os.makedirs(os.path.dirname(SHORTS_ARCHIVE), exist_ok=True)
+    with JOB_LOCK: JOB["item"] = "Ролик 0 из %d" % len(ids)
+    _execute(shorts_cmd(ids), total=len(ids))
+
 def start_job(url, thumbs_only):
     if not valid_url(url):
         return {"ok": False, "error": "Нужна ссылка на плейлист YouTube, в ней должно быть list=…"}
     with JOB_LOCK:
         if JOB["status"] == "running":
             return {"ok": False, "error": "Скачивание уже идёт."}
-        JOB.update(status="running", url=url.strip(), thumbs_only=thumbs_only, percent=0.0,
+        JOB.update(status="running", kind="playlist", url=url.strip(), thumbs_only=thumbs_only, percent=0.0,
                    item="", code=None); JOB["lines"].clear()
     threading.Thread(target=_run_job, args=(url, thumbs_only), daemon=True).start()
+    return {"ok": True}
+
+def start_shorts_job():
+    with JOB_LOCK:
+        if JOB["status"] == "running":
+            return {"ok": False, "error": "Скачивание уже идёт."}
+        JOB.update(status="running", kind="shorts", url="Shorts из кэша Firefox", thumbs_only=False, percent=0.0,
+                   item="Поиск в кэше Firefox…", code=None); JOB["lines"].clear()
+    threading.Thread(target=_run_shorts_job, daemon=True).start()
     return {"ok": True}
 
 def stop_job():
@@ -192,6 +386,16 @@ def stop_job():
         else: p.terminate()
     except Exception: pass
     return {"ok": True}
+
+def read_json_file(path, default):
+    try:
+        with open(path, encoding="utf-8") as f: return json.load(f)
+    except Exception:
+        return default
+
+def write_bytes(path, data):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "wb") as f: f.write(data)
 
 class Srv(ThreadingHTTPServer):
     # На Windows SO_REUSEADDR позволяет двум серверам занять один порт - запрещаем
@@ -208,6 +412,10 @@ class H(SimpleHTTPRequestHandler):
         p = unquote(urlparse(path).path)
         if p.startswith("/videos/"):
             return os.path.join(VIDEOS, *p[8:].split("/"))
+        if p.startswith("/shortsfiles/"):
+            parts = p[13:].split("/")
+            if not safe_parts(parts): return os.path.join(SHORTS, "__нет__")
+            return os.path.join(SHORTS, *parts)
         return os.path.join(APP, *p.lstrip("/").split("/"))
 
     def json(self, obj):
@@ -220,6 +428,7 @@ class H(SimpleHTTPRequestHandler):
     def do_GET(self):
         p = urlparse(self.path).path
         if p == "/api/library": return self.json(scan())
+        if p == "/api/shorts": return self.json(scan_shorts())
         if p == "/api/download/status": return self.json(job_snapshot())
         if p == "/api/chapters":
             return self.json({"chapters": get_chapters(parse_qs(urlparse(self.path).query).get("id", [""])[0])})
@@ -238,10 +447,9 @@ class H(SimpleHTTPRequestHandler):
             self.send_header("Cache-Control", "max-age=86400")
             self.send_header("Content-Length", str(len(b)))
             self.end_headers(); self.wfile.write(b); return
-        if p == "/api/likes":
-            try: return self.json(json.load(open(LIKES, encoding="utf-8")))
-            except Exception: return self.json([])
-        if p.startswith("/videos/") and self.headers.get("Range"):
+        if p == "/api/likes": return self.json(read_json_file(LIKES, []))
+        if p == "/api/collections": return self.json(read_json_file(COLLECTIONS, []))
+        if (p.startswith("/videos/") or p.startswith("/shortsfiles/")) and self.headers.get("Range"):
             return self.ranged(self.translate_path(self.path))
         return super().do_GET()
 
@@ -249,12 +457,19 @@ class H(SimpleHTTPRequestHandler):
         p = urlparse(self.path).path
         if p == "/api/likes":
             data = self.rfile.read(int(self.headers.get("Content-Length", 0)))
-            with open(LIKES, "wb") as f: f.write(data)
+            write_bytes(LIKES, data)
             return self.json({"ok": True})
-        if p in ("/api/download", "/api/download/cancel"):
+        if p in ("/api/download", "/api/download/cancel", "/api/shorts/download", "/api/collections"):
             if self.headers.get("X-OfflineTube") != "1":   # защита от запросов с чужих сайтов
                 return self.send_error(403)
+            if p == "/api/collections":
+                data = self.rfile.read(int(self.headers.get("Content-Length", 0)))
+                try: json.loads(data.decode("utf-8"))
+                except Exception: return self.send_error(400)
+                write_bytes(COLLECTIONS, data)
+                return self.json({"ok": True})
             if p.endswith("cancel"): return self.json(stop_job())
+            if p == "/api/shorts/download": return self.json(start_shorts_job())
             try: d = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
             except Exception: d = {}
             return self.json(start_job(str(d.get("url", "")), bool(d.get("thumbs_only"))))
@@ -262,8 +477,9 @@ class H(SimpleHTTPRequestHandler):
 
     def ranged(self, path):  # нужен для перемотки видео
         if not os.path.isfile(path): return self.send_error(404)
-        size = os.path.getsize(path)
         m = re.match(r"bytes=(\d*)-(\d*)", self.headers["Range"])
+        if not m: return super().do_GET()
+        size = os.path.getsize(path)
         start = int(m.group(1) or 0)
         end = int(m.group(2)) if m.group(2) else size - 1
         end = min(end, size - 1)

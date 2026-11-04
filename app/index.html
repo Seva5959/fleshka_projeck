@@ -21,6 +21,39 @@ h1{margin:0 0 18px;font-size:22px}
 .card small{color:var(--mute)}
 .pl .thumb{box-shadow:6px -6px 0 -2px var(--line)}
 .player video{width:100%;max-height:72vh;background:#000;border-radius:10px;display:block}
+
+/* ——— страница видео в стиле YouTube ——— */
+.vtitle{margin:14px 0 0;font-size:20px;font-weight:700;line-height:1.3}
+.vrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;margin:12px 0}
+.chan{display:flex;align-items:center;gap:12px;min-width:0}
+.ava{width:40px;height:40px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:700;font-size:17px;flex-shrink:0}
+.chan b{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border:0;border-radius:18px;background:var(--panel);color:var(--ink);font-weight:600;font-size:14px}
+.pill:hover{background:var(--line)}
+.pill svg{width:20px;height:20px;fill:currentColor;flex-shrink:0}
+.pill.sq{padding:0 12px}
+.pill.liked{background:var(--ink);color:var(--bg)}
+button:disabled{opacity:.5;cursor:default}
+.savewrap{position:relative}
+.menu{position:absolute;right:0;top:42px;width:290px;max-width:calc(100vw - 32px);background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.28);z-index:20;padding:6px 0}
+.menu[hidden]{display:none}
+.menu h4{margin:0;padding:10px 16px 8px;font-size:15px}
+.mi{display:flex;gap:14px;align-items:center;padding:8px 16px;cursor:pointer}
+.mi:hover{background:var(--line)}
+.mi input{width:18px;height:18px;accent-color:var(--acc);margin:0;flex-shrink:0}
+.mi span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mnew{display:flex;gap:8px;border-top:1px solid var(--line);margin-top:6px;padding:10px 12px 6px}
+.mnew input{flex:1;min-width:0;font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.dbox{background:var(--panel);border-radius:12px;padding:12px 14px;cursor:pointer;font-size:14px}
+.dbox:hover{background:var(--line)}
+.dstat{font-weight:700}
+.dtext{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:6px}
+.dbox:not(.open) .dtext{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.more{display:inline-block;margin-top:6px;font-weight:700}
+.more[hidden]{display:none}
+@media(max-width:600px){.vtitle{font-size:18px}}
+
 #chp{margin-top:12px}
 .chnow{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
 .chnow b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -50,12 +83,10 @@ h1{margin:0 0 18px;font-size:22px}
 .qm{min-width:0}.qm b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13px;font-weight:600}
 .qm small{color:var(--mute);font-size:12px}
 @media(max-width:1000px){.watch{grid-template-columns:1fr}.qpanel{position:static;max-height:460px}}
-.bar{display:flex;gap:12px;align-items:center;margin:12px 0}
 button{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 14px;border-radius:20px;cursor:pointer}
-button.liked{background:var(--acc);border-color:var(--acc);color:#fff}
-.head{display:flex;align-items:center;gap:16px;margin-bottom:18px}.head h1{margin:0}
+.head{display:flex;align-items:center;gap:16px;margin-bottom:18px;flex-wrap:wrap}.head h1{margin:0}
 .dl{background:var(--panel);border-radius:12px;padding:16px;margin-bottom:24px;max-width:760px}
-.dl .row{display:flex;gap:10px;margin-bottom:10px}
+.dl .row{display:flex;gap:10px;margin-bottom:10px;align-items:center}
 .dl input[type=text]{flex:1;font:inherit;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
 .dl label{display:block;color:var(--mute);margin-bottom:10px}
 .dl .state{margin:8px 0 6px;font-weight:600}.dl .err{color:var(--acc)}
@@ -63,6 +94,19 @@ button.liked{background:var(--acc);border-color:var(--acc);color:#fff}
 .log{max-height:170px;overflow:auto;font:12px/1.4 Consolas,monospace;color:var(--mute);white-space:pre-wrap;margin:10px 0 0}
 .empty{color:var(--mute);padding:40px 0;max-width:46ch}
 a.back{color:var(--mute);text-decoration:none}
+
+/* ——— Shorts ——— */
+.sfeed{height:calc(100vh - 130px);min-height:420px;max-width:420px;margin:0 auto;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none}
+.sfeed::-webkit-scrollbar{display:none}
+.sh{height:100%;padding-bottom:12px;scroll-snap-align:start;scroll-snap-stop:always}
+.shbox{position:relative;height:100%;background:#000;border-radius:14px;overflow:hidden}
+.shbox video{width:100%;height:100%;object-fit:contain;display:block;cursor:pointer}
+.sinfo{position:absolute;left:0;right:0;bottom:0;padding:48px 76px 16px 14px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.72));display:flex;flex-direction:column;gap:3px;pointer-events:none}
+.sinfo span{font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sact{position:absolute;right:10px;bottom:18px}
+.sact .pill{background:rgba(0,0,0,.55);color:#fff;backdrop-filter:blur(6px)}
+.sact .pill.liked{background:#fff;color:#000}
+
 @media(max-width:700px){nav{width:64px}nav a{font-size:0}.logo{font-size:0}}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 </style></head><body>
@@ -76,22 +120,53 @@ a.back{color:var(--mute);text-decoration:none}
 <main id="view"></main>
 <script>
 function pref(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){}}
-let queue={pl:'',order:[]}, shuffleOn=pref('ot_shuffle')==='1', repeatOn=pref('ot_repeat')==='1';
-let lib={playlists:[]}, likes=[], dlTimer=null, dlOpen=false, dlSt={status:'idle',lines:[]}, seenSeq=0, dlUrl='', dlThumbs=false, dlErr='';
+const WL='Смотреть позже';
+let queue={ctx:null,title:'',order:[]}, pageCtx=null, startCtx=null, curR='';
+let shuffleOn=pref('ot_shuffle')==='1', repeatOn=pref('ot_repeat')==='1';
+let lib={playlists:[]}, likes=[], cols=[], shorts=[];
+let dlTimer=null, dlOpen=false, dlSt={status:'idle',lines:[]}, seenSeq=0, dlUrl='', dlThumbs=false, dlErr='';
 const $=s=>document.querySelector(s), view=$('#view');
 const all=()=>lib.playlists.flatMap(p=>p.videos);
-const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const go=(kind,x)=>{location.hash='#/'+kind+'/'+encodeURIComponent(x)};
+
+/* ——— форматирование как на YouTube ——— */
+const plural=(n,a,b,c)=>{n=Math.abs(n)%100;const d=n%10;return n>10&&n<20?c:d===1?a:d>1&&d<5?b:c};
+const compact=n=>{n=Number(n);return n<1000?n.toLocaleString('ru-RU'):new Intl.NumberFormat('ru-RU',{notation:'compact',maximumFractionDigits:1}).format(n)};
+const viewsText=(n,full)=>{n=Number(n);
+  if(full||n<1000) return n.toLocaleString('ru-RU')+' '+plural(n,'просмотр','просмотра','просмотров');
+  return compact(n)+' просмотров'};
+const dateObj=s=>{s=String(s||'');return /^\d{8}$/.test(s)?new Date(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8)):null};
+const relDate=s=>{const d=dateObj(s);if(!d)return '';
+  const days=Math.floor((Date.now()-d)/864e5), rtf=new Intl.RelativeTimeFormat('ru',{numeric:'auto'});
+  if(days<1)return 'сегодня';
+  if(days<7)return rtf.format(-days,'day');
+  if(days<30)return rtf.format(-Math.floor(days/7),'week');
+  if(days<365)return rtf.format(-Math.floor(days/30),'month');
+  return rtf.format(-Math.floor(days/365),'year')};
+const fullDate=s=>{const d=dateObj(s);return d?d.toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'}):''};
+const likeLabel=(base,liked)=>base==null?(liked?'1':'Нравится'):compact(Number(base)+(liked?1:0));
+
+const IC_LIKE='<svg viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>';
+const IC_SAVE='<svg viewBox="0 0 24 24"><path d="M14 10H2v2h12v-2zm0-4H2v2h12V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM2 16h8v-2H2v2z"/></svg>';
+const IC_PREV='<svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>';
+const IC_NEXT='<svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>';
+const IC_REPEAT='<svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>';
+const IC_SHUFFLE='<svg viewBox="0 0 24 24"><path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>';
 
 async function init(){
   try{
     lib=await (await fetch('/api/library')).json();
     likes=await (await fetch('/api/likes')).json();
+    try{cols=await (await fetch('/api/collections')).json()}catch(e){cols=[]}
+    if(!Array.isArray(cols)) cols=[];
+    if(!cols.some(c=>c.name===WL)) cols.unshift({name:WL,ids:[]});
     try{seenSeq=(await (await fetch('/api/download/status')).json()).seq}catch(e){}
   }catch(e){view.innerHTML='<p class="empty">Нет связи с запускалкой. Откройте приложение через «Запустить.bat».</p>';return}
   route();
 }
 const saveLikes=()=>fetch('/api/likes',{method:'POST',body:JSON.stringify(likes)});
+const saveCols=()=>fetch('/api/collections',{method:'POST',headers:{'Content-Type':'application/json','X-OfflineTube':'1'},body:JSON.stringify(cols)});
 
 function card(v){
   return `<div class="card" data-watch="${esc(v.id)}">
@@ -99,34 +174,61 @@ function card(v){
     <h3>${esc(v.title)}</h3><small>${esc(v.playlist)}</small></div>`;
 }
 const grid=(vs,msg)=>vs.length?`<div class="grid">${vs.map(card).join('')}</div>`:`<p class="empty">${msg}</p>`;
+const byIdMap=()=>Object.fromEntries(all().map(v=>[v.id,v]));
+const colVideos=c=>{const m=byIdMap();return c.ids.map(i=>m[i]).filter(Boolean)};
 
 const pages={
   // TODO: что показывать на главной (недавние, случайные, продолжить просмотр)
   home:()=>`<h1>Главная</h1>`+grid(all(),'Видео пока нет. Положите папки плейлистов в папку videos.'),
-  shorts:()=>`<h1>Shorts</h1><p class="empty">Раздел в разработке. Здесь будут вертикальные ролики.</p>`,
-  playlists:()=>`<div class="head"><h1>Плейлисты</h1><button id="add">+ Добавить плейлист</button></div><div id="dl"></div>`+(lib.playlists.length?`<div class="grid">${lib.playlists.map(p=>
+  shorts:()=>`<div class="head"><h1>Shorts</h1><button id="shgo">Скачать 50 Shorts из кэша Firefox</button></div><div id="dl"></div><div id="shfeed"></div>`,
+  playlists:()=>`<div class="head"><h1>Плейлисты</h1><button id="add">+ Добавить плейлист</button></div><div id="dl"></div>`+
+    `<div class="grid">`+lib.playlists.map(p=>
     `<div class="card pl" data-playlist="${esc(p.name)}">
      <div class="thumb">${p.videos[0]?`<img loading="lazy" src="${p.videos[0].thumb}" alt="" onerror="this.remove()">`:''}</div>
-     <h3>${esc(p.name)}</h3><small>${p.videos.length} видео</small></div>`).join('')}</div>`
-     :`<p class="empty">Плейлистов пока нет. Нажмите «Добавить плейлист» и вставьте ссылку.</p>`),
+     <h3>${esc(p.name)}</h3><small>${p.videos.length} видео</small></div>`).join('')+
+    cols.map(c=>{const vs=colVideos(c);
+     return `<div class="card pl" data-collection="${esc(c.name)}">
+     <div class="thumb">${vs[0]?`<img loading="lazy" src="${vs[0].thumb}" alt="" onerror="this.remove()">`:''}</div>
+     <h3>${esc(c.name)}</h3><small>Мой плейлист · ${vs.length} видео</small></div>`}).join('')+`</div>`+
+    (lib.playlists.length?'':`<p class="empty">Скачанных плейлистов пока нет. Нажмите «Добавить плейлист» и вставьте ссылку.</p>`),
   liked:()=>`<h1>Понравившиеся</h1>`+grid(all().filter(v=>likes.includes(v.id)),'Нажмите «Нравится» под видео, и оно появится здесь.'),
 };
 
 function playlist(name){
   const p=lib.playlists.find(p=>p.name===name); if(!p) return pages.playlists();
+  pageCtx={kind:'p',name};
   return `<a class="back" href="#/playlists">← Плейлисты</a><h1>${esc(p.name)}</h1>`+grid(p.videos,'Пусто.');
 }
-const IC_REPEAT='<svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>';
-const IC_SHUFFLE='<svg viewBox="0 0 24 24"><path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>';
+function collection(name){
+  const c=cols.find(c=>c.name===name); if(!c) return pages.playlists();
+  pageCtx={kind:'c',name};
+  return `<a class="back" href="#/playlists">← Плейлисты</a>
+    <div class="head" style="margin-top:8px"><h1>${esc(c.name)}</h1>${name!==WL?'<button id="cdel">Удалить плейлист</button>':''}</div>`+
+    grid(colVideos(c),'В этом плейлисте пока пусто. Нажмите «Сохранить» под видео.');
+}
+function bindCollection(name){
+  const b=$('#cdel'); if(!b) return;
+  b.onclick=()=>{if(!confirm('Удалить плейлист «'+name+'»? Сами видео останутся на диске.')) return;
+    cols=cols.filter(c=>c.name!==name); saveCols(); location.hash='#/playlists'};
+}
+
+/* ——— очередь: папка-плейлист или мой плейлист ——— */
 const plList=name=>(lib.playlists.find(p=>p.name===name)||{videos:[]}).videos;
+const ctxIds=c=>{
+  if(!c) return [];
+  if(c.kind==='c') return colVideos(cols.find(x=>x.name===c.name)||{ids:[]}).map(v=>v.id);
+  return plList(c.name).map(x=>x.id);
+};
 function shuffled(ids,first){
   const r=ids.filter(x=>x!==first);
   for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]]}
   return first?[first,...r]:r;
 }
 function buildQueue(v){
-  const ids=plList(v.playlist).map(x=>x.id);
-  queue={pl:v.playlist,order:shuffleOn?shuffled(ids,v.id):ids};
+  const c=(startCtx&&ctxIds(startCtx).includes(v.id))?startCtx:{kind:'p',name:v.playlist};
+  startCtx=null;
+  const ids=ctxIds(c);
+  queue={ctx:c,title:c.name,order:shuffleOn?shuffled(ids,v.id):ids};
 }
 function nextId(id,dir){
   const o=queue.order,j=o.indexOf(id)+dir;
@@ -134,38 +236,55 @@ function nextId(id,dir){
   return repeatOn?o[(j+o.length)%o.length]:null;
 }
 function panel(id){
-  const byId=Object.fromEntries(plList(queue.pl).map(x=>[x.id,x]));
+  const byId=byIdMap();
   const pos=queue.order.indexOf(id);
-  const items=queue.order.map((vid,i)=>{const x=byId[vid];
+  const items=queue.order.filter(vid=>byId[vid]).map((vid,i)=>{const x=byId[vid];
     return `<div class="qi${vid===id?' cur':''}" data-watch="${esc(vid)}"><span class="n">${vid===id?'▶':i+1}</span>
       <div class="qt"><img loading="lazy" src="${x.thumb}" alt="" onerror="this.remove()"></div>
       <div class="qm"><b>${esc(x.title)}</b><small>${esc(x.playlist)}</small></div></div>`}).join('');
-  return `<div class="qh"><h2>${esc(queue.pl)}</h2><small>${pos+1} из ${queue.order.length}</small>
+  return `<div class="qh"><h2>${esc(queue.title)}</h2><small>${pos+1} из ${queue.order.length}</small>
     <div class="qb">
       <button id="rp" class="ic${repeatOn?' on':''}" title="Повторять плейлист" aria-pressed="${repeatOn}">${IC_REPEAT}</button>
       <button id="sh" class="ic${shuffleOn?' on':''}" title="Перемешать" aria-pressed="${shuffleOn}">${IC_SHUFFLE}</button>
     </div></div><div class="ql" id="ql">${items}</div>`;
 }
+
 function watch(id){
   const v=all().find(v=>v.id===id); if(!v) return pages.home();
-  if(queue.pl!==v.playlist||queue.order.length!==plList(v.playlist).length||!queue.order.includes(id)) buildQueue(v);
+  if(!queue.ctx||!queue.order.includes(id)||queue.order.length!==ctxIds(queue.ctx).length) buildQueue(v);
+  const channel=v.uploader||'Канал не указан';
+  const liked=likes.includes(id);
+  const saved=cols.some(c=>c.ids.includes(id));
   return `<div class="watch"><div class="player">
     <video id="pv" src="${v.url}" controls autoplay preload="auto"></video>
     <p id="err" class="empty" hidden></p>
     <div id="chp" hidden></div>
-    <h1 style="margin-top:14px">${esc(v.title)}</h1>
-    <div class="bar"><button id="lk" class="${likes.includes(id)?'liked':''}">Нравится</button>
-      <button id="pr">← Предыдущее</button><button id="nx">Следующее →</button>
-      <small>${esc(v.playlist)}</small></div></div>
-    <aside class="qpanel" id="qp">${panel(id)}</aside></div>`;
+    <h1 class="vtitle">${esc(v.title)}</h1>
+    <div class="vrow">
+      <div class="chan"><div class="ava">${esc(channel.charAt(0).toUpperCase())}</div><b>${esc(channel)}</b></div>
+      <div class="acts">
+        <button id="lk" class="pill${liked?' liked':''}" aria-pressed="${liked}">${IC_LIKE}<span id="lktxt">${esc(likeLabel(v.youtube_likes,liked))}</span></button>
+        <div class="savewrap">
+          <button id="sv" class="pill">${IC_SAVE}<span id="svtxt">${saved?'Сохранено':'Сохранить'}</span></button>
+          <div id="svm" class="menu" hidden></div>
+        </div>
+        <button id="pr" class="pill sq" title="Предыдущее" aria-label="Предыдущее">${IC_PREV}</button>
+        <button id="nx" class="pill sq" title="Следующее" aria-label="Следующее">${IC_NEXT}</button>
+      </div>
+    </div>
+    <section class="dbox" id="dbox">
+      <div class="dstat" id="dstat"></div>
+      <div class="dtext" id="dtext">${esc(v.description||'Описание не сохранено. Чтобы получить его, скачайте информацию о плейлисте ещё раз с включённым сохранением info.json.')}</div>
+      <span class="more" id="dmore">…ещё</span>
+    </section>
+  </div><aside class="qpanel" id="qp">${panel(id)}</aside></div>`;
 }
 function bindPanel(id){
-  const v=all().find(v=>v.id===id);
   const ql=$('#ql'), cur=ql.querySelector('.cur'); if(cur) ql.scrollTop=cur.offsetTop-8;
   const refresh=()=>{$('#qp').innerHTML=panel(id);bindPanel(id)};   // видео не перезапускается
   $('#rp').onclick=()=>{repeatOn=!repeatOn;pref('ot_repeat',repeatOn?'1':'0');refresh()};
   $('#sh').onclick=()=>{shuffleOn=!shuffleOn;pref('ot_shuffle',shuffleOn?'1':'0');
-    const ids=plList(v.playlist).map(x=>x.id);
+    const ids=ctxIds(queue.ctx);
     queue.order=shuffleOn?shuffled(ids,id):ids;refresh()};
 }
 const fmt=t=>{t=Math.floor(t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;
@@ -190,13 +309,49 @@ async function drawChapters(id,pv){
     rows.forEach((r,i)=>r.classList.toggle('cur',i===cur))};
   pv.addEventListener('timeupdate',upd);pv.addEventListener('seeked',upd);upd();
 }
+
+/* ——— меню «Сохранить» ——— */
+function updateSv(id){const t=$('#svtxt'); if(t) t.textContent=cols.some(c=>c.ids.includes(id))?'Сохранено':'Сохранить'}
+function drawSave(id){
+  const m=$('#svm'); if(!m) return;
+  m.innerHTML=`<h4>Сохранить в…</h4>`+
+    cols.map((c,i)=>`<label class="mi"><input type="checkbox" data-c="${i}" ${c.ids.includes(id)?'checked':''}><span>${esc(c.name)}</span></label>`).join('')+
+    `<div class="mnew"><input type="text" id="cnew" placeholder="Новый плейлист" maxlength="60"><button id="cadd">Создать</button></div>`;
+  m.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.onchange=()=>{
+    const c=cols[+cb.dataset.c];
+    c.ids=cb.checked?[...new Set([...c.ids,id])]:c.ids.filter(x=>x!==id);
+    saveCols(); updateSv(id)});
+  const add=()=>{const n=$('#cnew').value.trim();
+    if(!n||cols.some(c=>c.name.toLowerCase()===n.toLowerCase())) return;
+    cols.push({name:n,ids:[id]}); saveCols(); updateSv(id); drawSave(id)};
+  $('#cadd').onclick=add;
+  $('#cnew').onkeydown=e=>{if(e.key==='Enter') add()};
+}
+document.addEventListener('click',e=>{
+  const m=$('#svm'); if(m&&!m.hidden&&!e.target.closest('.savewrap')) m.hidden=true;
+});
+
 function bindWatch(id){
   const v=all().find(v=>v.id===id); if(!v) return;
   const pv=$('#pv');
+  const dbox=$('#dbox'), dtext=$('#dtext'), dmore=$('#dmore'), dstat=$('#dstat');
+  let open=false;
+  const isLong=dtext.scrollHeight>dtext.clientHeight+1;
+  const statText=()=>{const p=[];
+    if(v.views!=null) p.push(viewsText(v.views,open));
+    const d=open?fullDate(v.upload_date):relDate(v.upload_date); if(d) p.push(d);
+    return p.length?p.join('\u00a0\u00a0'):'Статистика YouTube не сохранена'};
+  const sync=()=>{dbox.classList.toggle('open',open);dstat.textContent=statText();
+    dmore.hidden=!isLong;dmore.textContent=open?'Свернуть':'…ещё'};
+  dbox.onclick=()=>{open=!open;sync()};
+  sync();
   pv.onerror=()=>{const e=$('#err');e.hidden=false;
     e.textContent='Браузер не смог воспроизвести этот файл (код '+(pv.error?.code||'?')+'). Чаще всего причина в кодеке (AV1/VP9). Перекачайте видео в H.264 или конвертируйте через ffmpeg: см. README.'};
-  $('#lk').onclick=e=>{likes=likes.includes(id)?likes.filter(x=>x!==id):[...likes,id];
-    e.target.classList.toggle('liked');saveLikes()};
+  $('#lk').onclick=()=>{const on=!likes.includes(id);
+    likes=on?[...likes,id]:likes.filter(x=>x!==id);
+    const b=$('#lk'); b.classList.toggle('liked',on); b.setAttribute('aria-pressed',on);
+    $('#lktxt').textContent=likeLabel(v.youtube_likes,on); saveLikes()};
+  $('#sv').onclick=()=>{const m=$('#svm'); if(m.hidden){drawSave(id);m.hidden=false}else m.hidden=true};
   const step=dir=>{const n=nextId(id,dir); if(!n) return;
     if(n===id){pv.currentTime=0;pv.play()} else go('watch',n)};
   $('#nx').onclick=()=>step(1);
@@ -205,23 +360,73 @@ function bindWatch(id){
   bindPanel(id);
   drawChapters(id,pv);
 }
+
+/* ——— Shorts ——— */
+async function bindShorts(){
+  $('#shgo').onclick=async()=>{dlErr='';
+    const r=await dlPost('/api/shorts/download');
+    if(!r.ok) dlErr=r.error||'Не удалось начать.'; pollDl()};
+  pollDl();
+  try{shorts=await (await fetch('/api/shorts')).json()}catch(e){shorts=[]}
+  const feed=$('#shfeed'); if(!feed) return;            // ушли со страницы
+  if(!shorts.length){
+    feed.innerHTML='<p class="empty">Shorts пока нет. Откройте YouTube в Firefox, пролистайте рекомендации и Shorts, затем нажмите кнопку выше: программа найдёт ролики в кэше браузера и скачает их.</p>';
+    return;
+  }
+  feed.innerHTML=`<div class="sfeed" id="sfeed">`+shorts.map(s=>{const on=likes.includes(s.id);
+    return `<section class="sh"><div class="shbox">
+      <video src="${s.url}" ${s.poster?`poster="${s.poster}"`:''} loop playsinline preload="none"></video>
+      <div class="sinfo"><b>${esc(s.uploader)}</b><span>${esc(s.title)}</span></div>
+      <div class="sact"><button class="pill sl${on?' liked':''}" data-id="${esc(s.id)}" data-base="${s.youtube_likes??''}">${IC_LIKE}<span>${esc(likeLabel(s.youtube_likes,on))}</span></button></div>
+    </div></section>`}).join('')+`</div>`;
+  const sf=$('#sfeed');
+  const io=new IntersectionObserver(es=>es.forEach(en=>{
+    const vd=en.target.querySelector('video');
+    if(en.isIntersecting){vd.preload='auto';vd.play().catch(()=>{})} else vd.pause();
+  }),{root:sf,threshold:0.6});
+  sf.querySelectorAll('.sh').forEach(el=>io.observe(el));
+  sf.addEventListener('click',e=>{
+    const b=e.target.closest('.sl');
+    if(b){const sid=b.dataset.id, on=!likes.includes(sid);
+      likes=on?[...likes,sid]:likes.filter(x=>x!==sid);
+      b.classList.toggle('liked',on);
+      b.querySelector('span').textContent=likeLabel(b.dataset.base===''?null:b.dataset.base,on);
+      saveLikes(); return}
+    const vd=e.target.closest('video'); if(vd) vd.paused?vd.play():vd.pause();
+  });
+}
+
+/* ——— загрузки ——— */
+const NAMES={running:'Скачивание…',done:'Готово',error:'Завершено с ошибками: часть видео могла не скачаться',cancelled:'Остановлено'};
 const dlPost=(path,body)=>fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-OfflineTube':'1'},body:JSON.stringify(body||{})}).then(r=>r.json());
 function drawDl(){
   const box=$('#dl'); if(!box) return;
   const s=dlSt, run=s.status==='running';
+  const sb=$('#shgo'); if(sb) sb.disabled=run;
+  if(curR==='shorts'){
+    const mine=s.kind==='shorts';
+    if(!run&&!dlErr&&(!mine||s.status==='idle')){box.innerHTML='';return}
+    box.innerHTML=`<div class="dl">
+      ${run&&!mine?'<div class="state">Сейчас идёт скачивание плейлиста. Дождитесь окончания.</div>':''}
+      ${dlErr?`<div class="state err">${esc(dlErr)}</div>`:''}
+      ${mine&&s.status!=='idle'?`<div class="row" style="justify-content:space-between"><div class="state">${NAMES[s.status]||''} ${esc(s.item||'')}</div>${run?'<button id="dlstop">Остановить</button>':''}</div>
+      <div class="prog"><i style="width:${s.percent||0}%"></i></div>
+      <pre class="log">${esc((s.lines||[]).slice(-12).join('\n'))}</pre>`:''}</div>`;
+    const st=$('#dlstop'); if(st) st.onclick=async()=>{await dlPost('/api/download/cancel'); pollDl()};
+    return;
+  }
   if(!dlOpen && !run){box.innerHTML='';return}
-  const names={running:'Скачивание…',done:'Готово',error:'Завершено с ошибками: часть видео могла не скачаться',cancelled:'Остановлено'};
   box.innerHTML=`<div class="dl">
     <div class="row"><input type="text" id="dlurl" placeholder="Ссылка на плейлист YouTube (с list=…)" value="${esc(run?s.url:dlUrl)}" ${run?'disabled':''}>
     ${run?'<button id="dlstop">Остановить</button>':'<button id="dlgo">Скачать</button>'}</div>
     <label><input type="checkbox" id="dlthumbs" ${(run?s.thumbs_only:dlThumbs)?'checked':''} ${run?'disabled':''}> Только обложки и эпизоды (видео уже скачаны)</label>
     ${dlErr?`<div class="state err">${esc(dlErr)}</div>`:''}
-    ${s.status!=='idle'?`<div class="state">${names[s.status]||''} ${esc(s.item||'')}</div>
+    ${s.status!=='idle'?`<div class="state">${NAMES[s.status]||''} ${esc(s.item||'')}</div>
     <div class="prog"><i style="width:${s.percent||0}%"></i></div>
     <pre class="log">${esc((s.lines||[]).slice(-12).join('\n'))}</pre>`:''}</div>`;
   const u=$('#dlurl'); if(u&&!run) u.oninput=e=>dlUrl=e.target.value;
   const t=$('#dlthumbs'); if(t&&!run) t.onchange=e=>dlThumbs=e.target.checked;
-  const go=$('#dlgo'); if(go) go.onclick=async()=>{
+  const goBtn=$('#dlgo'); if(goBtn) goBtn.onclick=async()=>{
     dlErr=''; const r=await dlPost('/api/download',{url:dlUrl.trim(),thumbs_only:dlThumbs});
     if(!r.ok) dlErr=r.error||'Не удалось начать.'; dlOpen=true; pollDl();};
   const st=$('#dlstop'); if(st) st.onclick=async()=>{await dlPost('/api/download/cancel'); pollDl()};
@@ -244,17 +449,24 @@ function route(){
   clearTimeout(dlTimer);
   const m=(location.hash||'#/home').match(/#\/([^/]*)\/?(.*)/)||[,'home',''];
   const r=m[1], a=m[2]?decodeURIComponent(m[2]):'';
-  const active=r==='playlist'?'playlists':r==='watch'?'home':r;
+  curR=r; pageCtx=null; dlErr='';
+  const active=r==='playlist'||r==='collection'?'playlists':r==='watch'?'home':r;
   document.querySelectorAll('nav a').forEach(x=>x.classList.toggle('on',x.dataset.r===active));
-  view.innerHTML = r==='watch'?watch(a): r==='playlist'?playlist(a): (pages[r]||pages.home)();
+  view.innerHTML = r==='watch'?watch(a): r==='playlist'?playlist(a): r==='collection'?collection(a): (pages[r]||pages.home)();
   if(r==='watch') bindWatch(a);
   if(r==='playlists') bindDl();
+  if(r==='shorts') bindShorts();
+  if(r==='collection') bindCollection(a);
   scrollTo(0,0);
 }
 view.addEventListener('click',e=>{
   const c=e.target.closest('.card,.qi'); if(!c) return;
-  if(c.dataset.watch) go('watch',c.dataset.watch);
+  if(c.dataset.watch){
+    if(c.classList.contains('card')){queue.ctx=null;startCtx=pageCtx}   // новый заход: очередь из того списка, где кликнули
+    go('watch',c.dataset.watch);
+  }
   else if(c.dataset.playlist) go('playlist',c.dataset.playlist);
+  else if(c.dataset.collection) go('collection',c.dataset.collection);
 });
 addEventListener('hashchange',route); init();
 </script></body></html>
