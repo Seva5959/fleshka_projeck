@@ -169,6 +169,7 @@ def scan_shorts():
             "uploader": info.get("uploader") or "",
             "views": info.get("view_count"),
             "youtube_likes": info.get("like_count"),
+            "description": info.get("description") or "",
             "url": "/shortsfiles/" + quote(f),
             "poster": poster,
         })
@@ -261,7 +262,8 @@ def firefox_short_ids(limit, log):
 
 
 JOB = {"status": "idle", "kind": "playlist", "url": "", "thumbs_only": False, "percent": 0.0, "item": "",
-       "lines": collections.deque(maxlen=60), "seq": 0, "code": None}
+       "lines": collections.deque(maxlen=60), "seq": 0, "code": None,
+       "queue": [], "queue_index": 0, "queue_total": 0, "failed": []}
 JOB_LOCK = threading.Lock()
 PROC = None
 
@@ -304,7 +306,7 @@ def job_snapshot():
 def job_log(text):
     with JOB_LOCK: JOB["lines"].append(text)
 
-def _execute(cmd, total=0):
+def _execute(cmd, total=0, finalize=True):
     """Запуск yt-dlp и разбор его вывода в JOB (общий для плейлистов и Shorts)"""
     global PROC
     env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8", PYTHONUNBUFFERED="1")
@@ -330,14 +332,40 @@ def _execute(cmd, total=0):
     except Exception as e:
         job_log("Не удалось запустить yt-dlp: %r" % e)
     with JOB_LOCK:
-        if JOB["status"] != "cancelled":
-            JOB["status"] = "done" if code == 0 else "error"
-        JOB["code"] = code; JOB["seq"] += 1
-        if JOB["status"] == "done": JOB["percent"] = 100.0
+        if finalize:
+            if JOB["status"] != "cancelled":
+                JOB["status"] = "done" if code == 0 else "error"
+            JOB["code"] = code; JOB["seq"] += 1
+            if JOB["status"] == "done": JOB["percent"] = 100.0
     PROC = None
+    return code
 
-def _run_job(url, thumbs_only):
-    _execute(ytdlp_cmd(url, thumbs_only))
+def _run_job(urls, thumbs_only):
+    failed = []
+    for index, url in enumerate(urls, 1):
+        with JOB_LOCK:
+            if JOB["status"] == "cancelled": break
+            JOB["queue_index"] = index
+            JOB["url"] = url
+            JOB["item"] = "Плейлист %d из %d" % (index, len(urls))
+            JOB["percent"] = 0.0
+        job_log("\n[%d/%d] Начинаю: %s" % (index, len(urls), url))
+        code = _execute(ytdlp_cmd(url, thumbs_only), finalize=False)
+        with JOB_LOCK:
+            cancelled = JOB["status"] == "cancelled"
+        if cancelled: break
+        if code != 0:
+            failed.append({"url": url, "code": code})
+            job_log("Ошибка этого плейлиста; перехожу к следующему.")
+        else:
+            job_log("Плейлист завершён успешно.")
+    with JOB_LOCK:
+        if JOB["status"] != "cancelled":
+            JOB["status"] = "done_with_errors" if failed else "done"
+            JOB["percent"] = 100.0
+        JOB["failed"] = failed
+        JOB["code"] = 1 if failed else 0
+        JOB["seq"] += 1
 
 def _run_shorts_job():
     try:
@@ -355,16 +383,20 @@ def _run_shorts_job():
     with JOB_LOCK: JOB["item"] = "Ролик 0 из %d" % len(ids)
     _execute(shorts_cmd(ids), total=len(ids))
 
-def start_job(url, thumbs_only):
-    if not valid_url(url):
-        return {"ok": False, "error": "Нужна ссылка на плейлист YouTube, в ней должно быть list=…"}
+def start_job(raw_urls, thumbs_only):
+    urls = [u.strip() for u in str(raw_urls or "").splitlines() if u.strip()]
+    if not urls:
+        return {"ok": False, "error": "Вставь хотя бы одну ссылку — по одной на строку."}
+    bad = [u for u in urls if not valid_url(u)]
+    if bad:
+        return {"ok": False, "error": "Некорректная ссылка (нужна ссылка YouTube с list=):\n" + bad[0]}
     with JOB_LOCK:
         if JOB["status"] == "running":
             return {"ok": False, "error": "Скачивание уже идёт."}
-        JOB.update(status="running", kind="playlist", url=url.strip(), thumbs_only=thumbs_only, percent=0.0,
-                   item="", code=None); JOB["lines"].clear()
-    threading.Thread(target=_run_job, args=(url, thumbs_only), daemon=True).start()
-    return {"ok": True}
+        JOB.update(status="running", kind="playlist", url="\n".join(urls), thumbs_only=thumbs_only, percent=0.0,
+                   item="Подготовка очереди…", code=None, queue=urls, queue_index=0, queue_total=len(urls), failed=[]); JOB["lines"].clear()
+    threading.Thread(target=_run_job, args=(urls, thumbs_only), daemon=True).start()
+    return {"ok": True, "count": len(urls)}
 
 def start_shorts_job():
     with JOB_LOCK:
@@ -376,15 +408,17 @@ def start_shorts_job():
     return {"ok": True}
 
 def stop_job():
-    p = PROC
+    global PROC
     with JOB_LOCK:
-        if JOB["status"] != "running" or p is None: return {"ok": False}
+        if JOB["status"] != "running": return {"ok": False}
         JOB["status"] = "cancelled"
-    try:
-        if os.name == "nt":
-            subprocess.run(["taskkill", "/F", "/T", "/PID", str(p.pid)], capture_output=True)
-        else: p.terminate()
-    except Exception: pass
+        p = PROC
+    if p is not None:
+        try:
+            if os.name == "nt":
+                subprocess.run(["taskkill", "/F", "/T", "/PID", str(p.pid)], capture_output=True)
+            else: p.terminate()
+        except Exception: pass
     return {"ok": True}
 
 def read_json_file(path, default):
@@ -499,6 +533,9 @@ class H(SimpleHTTPRequestHandler):
                 left -= len(chunk)
 
 if __name__ == "__main__":
+    os.makedirs(os.path.join(ROOT, "data"), exist_ok=True)
+    os.makedirs(VIDEOS, exist_ok=True)
+    os.makedirs(SHORTS, exist_ok=True)
     if not os.path.isfile(os.path.join(APP, "index.html")):
         print("ОШИБКА: не найден index.html (ожидается в папке app рядом с server.py)")
         input("Нажмите Enter..."); sys.exit(1)
